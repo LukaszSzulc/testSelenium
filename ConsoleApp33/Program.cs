@@ -9,10 +9,12 @@ namespace ConsoleApp33
     class Program
     {
         private readonly ILogger<Program> logger;
+        private readonly ISeleniumService seleniumService;
 
-        public Program(ILogger<Program> logger)
+        public Program(ILogger<Program> logger, ISeleniumService seleniumService)
         {
             this.logger = logger;
+            this.seleniumService = seleniumService;
         }
         static async Task Main(string[] args)
         {
@@ -21,12 +23,20 @@ namespace ConsoleApp33
             await application.RunAsync();
         }
 
-        public Task RunAsync()
+        public async Task RunAsync()
         {
-            logger.LogInformation("Hello");
-            logger.LogInformation("Test");
-            logger.LogInformation("Finished");
-            return Task.CompletedTask;
+            try
+            {
+                logger.LogInformation("Hello");
+                logger.LogInformation("Test");
+                logger.LogInformation("Finished");
+                await seleniumService.RunAsync();
+
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Selenium Error");
+            }
         }
     }
 }

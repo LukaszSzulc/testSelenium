@@ -12,12 +12,14 @@ namespace ConsoleApp33
         {
             var config = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false).Build();
             var serviceCollection = new ServiceCollection();
+            serviceCollection.Configure<SeleniumConfiguration>(config.GetSection("Selenium"));
             serviceCollection.AddOptions();
             serviceCollection.AddLogging(logger =>
             {
                 logger.AddConsole();
             });
 
+            serviceCollection.AddTransient<ISeleniumService, SeleniumService>();
             serviceCollection.AddTransient<Program>();
             return serviceCollection.BuildServiceProvider();
         }
