@@ -7,6 +7,7 @@ using OpenQA.Selenium.Remote;
 using OpenQA.Selenium.Chrome;
 using Microsoft.Extensions.Logging;
 using System.Threading;
+using System.Collections.Concurrent;
 
 namespace ConsoleApp33
 {
@@ -33,20 +34,30 @@ namespace ConsoleApp33
             var domains = await domainServiceProvider.Get();
             int counter = 1;
             object lockObject = new object();
+            var list = new ConcurrentQueue<Task>();
             Parallel.ForEach(domains, parallelOptions: new ParallelOptions { MaxDegreeOfParallelism = 16 }, async (domain) =>
             {
-                using (var driver = new RemoteWebDriver(new Uri(options.Value.Url), chromeOptions))
+                try
                 {
-                    driver.Navigate().GoToUrl($"http://{domain}");
-                    var screenshoot = driver.GetScreenshot();
-                    await azureStorage.Put(screenshoot.AsByteArray, domain);
-                    lock (lockObject)
+                    using (var driver = new RemoteWebDriver(new Uri(options.Value.Url), chromeOptions))
                     {
-                        logger.LogInformation($"processed {counter}/{domains.Count}");
-                        Interlocked.Increment(ref counter);
+                        driver.Navigate().GoToUrl($"http://{domain}");
+                        var screenshoot = driver.GetScreenshot();
+                        list.Enqueue(azureStorage.Put(screenshoot.AsByteArray, domain));
+                        lock (lockObject)
+                        {
+                            logger.LogInformation($"processed {counter}/{domains.Count}");
+                            Interlocked.Increment(ref counter);
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Selenium error");
+                }
             });
+
+            await Task.WhenAll(list);
         }
     }
 }
