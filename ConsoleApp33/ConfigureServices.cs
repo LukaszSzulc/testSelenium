@@ -13,6 +13,7 @@ namespace ConsoleApp33
             var config = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false).Build();
             var serviceCollection = new ServiceCollection();
             serviceCollection.Configure<SeleniumConfiguration>(config.GetSection("Selenium"));
+            serviceCollection.Configure<AzureConfiguration>(config.GetSection("AzureStorage"));
             serviceCollection.AddOptions();
             serviceCollection.AddLogging(logger =>
             {
@@ -20,6 +21,8 @@ namespace ConsoleApp33
             });
 
             serviceCollection.AddTransient<ISeleniumService, SeleniumService>();
+            serviceCollection.AddTransient<IDomainProvider, DomainProvider>();
+            serviceCollection.AddTransient<IAzureStorage, AzureStorage>();
             serviceCollection.AddTransient<Program>();
             return serviceCollection.BuildServiceProvider();
         }
